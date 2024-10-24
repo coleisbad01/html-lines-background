@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Lines Background</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000; /* Solid background color */
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="linesCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('linesCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Resize the canvas to fill the window
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particles = [];
+        const particleCount = 100; // Number of particles
+        const maxDistance = 100; // Max distance to draw lines
+
+        // Particle class
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 3 + 1; // Random size between 1 and 4
+                this.speedX = Math.random() * 2 - 1; // Random speed in X
+                this.speedY = Math.random() * 2 - 1; // Random speed in Y
+                this.color = `rgba(255, 255, 255, 0.8)`; // Particle color
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                // Bounce off walls
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Generate particles
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height));
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+            particles.forEach((particle, index) => {
+                particle.update();
+                particle.draw();
+
+                // Draw lines to other particles
+                for (let j = index + 1; j < particles.length; j++) {
+                    const otherParticle = particles[j];
+                    const distance = Math.sqrt((particle.x - otherParticle.x) ** 2 + (particle.y - otherParticle.y) ** 2);
+                    if (distance < maxDistance) {
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${1 - distance / maxDistance})`; // Fade lines based on distance
+                        ctx.lineWidth = 1; // Line width
+                        ctx.beginPath();
+                        ctx.moveTo(particle.x, particle.y);
+                        ctx.lineTo(otherParticle.x, otherParticle.y);
+                        ctx.stroke();
+                    }
+                }
+            });
+            requestAnimationFrame(animate); // Call animate again for the next frame
+        }
+
+        // Mouse movement event to attract particles
+        canvas.addEventListener('mousemove', (event) => {
+            const mouseX = event.clientX;
+            const mouseY = event.clientY;
+
+            particles.forEach(particle => {
+                const dx = mouseX - particle.x;
+                const dy = mouseY - particle.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                // If within 50 pixels, move particle towards the cursor
+                if (distance < 50) {
+                    particle.x += dx / distance * 2; // Move particle in X direction
+                    particle.y += dy / distance * 2; // Move particle in Y direction
+                }
+            });
+        });
+
+        animate(); // Start the animation
+    </script>
+</body>
+</html>
